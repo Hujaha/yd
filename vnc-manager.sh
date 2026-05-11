@@ -52,7 +52,6 @@ install_vnc() {
     pkill -f "ssh.*qr@free.pinggy.io" 2>/dev/null
     sleep 1
     
-    # Пароль VNC
     if [ ! -f "$HOME/.vnc/passwd" ]; then
         echo -e "${YELLOW}[!] Установите пароль для VNC:${NC}"
         vncpasswd
@@ -63,7 +62,6 @@ install_vnc() {
         fi
     fi
     
-    # VNC
     echo -e "${YELLOW}[*] Запуск VNC сервера...${NC}"
     vncserver :1 -geometry ${VNC_GEOMETRY} -depth 24 -localhost yes
     if [ $? -ne 0 ]; then
@@ -73,7 +71,6 @@ install_vnc() {
     fi
     echo -e "${GREEN}[+] VNC: localhost:${VNC_PORT}${NC}"
     
-    # noVNC
     echo -e "${YELLOW}[*] Запуск noVNC...${NC}"
     NOVNC_WEB="/usr/share/novnc"
     [ ! -d "$NOVNC_WEB" ] && NOVNC_WEB="/usr/share/novnc/www"
@@ -92,7 +89,6 @@ install_vnc() {
     sleep 1
     echo -e "${GREEN}[+] noVNC: http://localhost:${NOVNC_PORT}${NC}"
     
-    # SSH туннель
     echo -e "${YELLOW}[*] Создание SSH туннеля Pinggy...${NC}"
     echo -e "${CYAN}    Ожидание URL...${NC}"
     
@@ -116,63 +112,4 @@ install_vnc() {
         echo -e "${CYAN}🌐 Публичная ссылка:${NC}"
         echo -e "${GREEN}   ${URL}${NC}"
         echo ""
-        echo -e "${YELLOW}   Откройте в браузере для доступа к рабочему столу${NC}"
-    else
-        echo -e "${YELLOW}⚠️  URL не определён автоматически.${NC}"
-        echo -e "${CYAN}   Ищите ссылку вида https://xxx.pinggy.link в выводе выше${NC}"
-    fi
-    echo ""
-    echo -e "${BLUE}--- Локально ---${NC}"
-    echo -e "   VNC:   localhost:${VNC_PORT}"
-    echo -e "   noVNC: http://localhost:${NOVNC_PORT}"
-    echo ""
-    echo -e "${RED}--- Для остановки выберите [2] в меню ---${NC}"
-    
-    rm -f "$TEMP_LOG"
-    
-    echo ""
-    read -p "Нажмите Enter для возврата в меню (процессы останутся активными)..."
-}
-
-remove_vnc() {
-    echo -e "${RED}--- Остановка и удаление VNC ---${NC}"
-    
-    echo -e "${YELLOW}[*] Остановка SSH туннеля...${NC}"
-    pkill -f "ssh.*qr@free.pinggy.io" 2>/dev/null
-    
-    echo -e "${YELLOW}[*] Остановка websockify...${NC}"
-    pkill -f "websockify" 2>/dev/null
-    
-    echo -e "${YELLOW}[*] Остановка VNC сервера...${NC}"
-    vncserver -kill :1 2>/dev/null
-    vncserver -kill :2 2>/dev/null
-    
-    rm -rf "$HOME/.novnc-tmp" 2>/dev/null
-    
-    echo ""
-    echo -e "${GREEN}[+] Все сервисы остановлены и удалены.${NC}"
-    read -p "Нажмите Enter..."
-}
-
-# --- Главный цикл ---
-while true; do
-    show_menu
-    read choice
-    
-    case $choice in
-        1)
-            install_vnc
-            ;;
-        2)
-            remove_vnc
-            ;;
-        3)
-            echo -e "${CYAN}Выход.${NC}"
-            exit 0
-            ;;
-        *)
-            echo -e "${RED}Неверный выбор!${NC}"
-            sleep 1
-            ;;
-    esac
-done
+        echo -e "${YELLOW}   Откройте в браузере для доступа к
