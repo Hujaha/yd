@@ -1,9 +1,5 @@
 #!/bin/bash
 
-# ============================================
-# VNC + SSH Tunnel Manager (Pinggy)
-# ============================================
-
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -17,16 +13,15 @@ VNC_GEOMETRY="1024x768"
 SSH_TUNNEL="-p 443 -R 0:127.0.0.1:${NOVNC_PORT} qr@free.pinggy.io"
 
 show_menu() {
-    clear
-    echo -e "${CYAN}╔══════════════════════════════════════╗${NC}"
-    echo -e "${CYAN}║      VNC + SSH Tunnel Manager        ║${NC}"
-    echo -e "${CYAN}╚══════════════════════════════════════╝${NC}"
+    echo ""
+    echo -e "${CYAN}========================================${NC}"
+    echo -e "${CYAN}      VNC + SSH Tunnel Manager${NC}"
+    echo -e "${CYAN}========================================${NC}"
     echo ""
     echo -e "${GREEN}  [1] Установить и запустить VNC${NC}"
     echo -e "${RED}  [2] Удалить / остановить VNC${NC}"
     echo -e "${YELLOW}  [3] Выход${NC}"
     echo ""
-    echo -n "Выберите действие: "
 }
 
 check_deps() {
@@ -34,7 +29,7 @@ check_deps() {
         if ! command -v "$cmd" &> /dev/null; then
             echo -e "${RED}[!] $cmd не найден!${NC}"
             echo -e "${YELLOW}    Установите: sudo apt install tigervnc-standalone-server websockify openssh-client${NC}"
-            read -p "Нажмите Enter..."
+            read -r -p "Нажмите Enter..."
             return 1
         fi
     done
@@ -57,7 +52,7 @@ install_vnc() {
         vncpasswd
         if [ $? -ne 0 ]; then
             echo -e "${RED}[!] Пароль не установлен. Отмена.${NC}"
-            read -p "Нажмите Enter..."
+            read -r -p "Нажмите Enter..."
             return
         fi
     fi
@@ -66,7 +61,7 @@ install_vnc() {
     vncserver :1 -geometry ${VNC_GEOMETRY} -depth 24 -localhost yes
     if [ $? -ne 0 ]; then
         echo -e "${RED}[!] Ошибка запуска VNC${NC}"
-        read -p "Нажмите Enter..."
+        read -r -p "Нажмите Enter..."
         return
     fi
     echo -e "${GREEN}[+] VNC: localhost:${VNC_PORT}${NC}"
@@ -104,12 +99,76 @@ install_vnc() {
     done
     
     echo ""
-    echo -e "${GREEN}╔══════════════════════════════════════╗${NC}"
-    echo -e "${GREEN}║     ✅ VNC + ТУННЕЛЬ ЗАПУЩЕНЫ!       ║${NC}"
-    echo -e "${GREEN}╚══════════════════════════════════════╝${NC}"
+    echo -e "${GREEN}========================================${NC}"
+    echo -e "${GREEN}     ✅ VNC + ТУННЕЛЬ ЗАПУЩЕНЫ!${NC}"
+    echo -e "${GREEN}========================================${NC}"
     echo ""
     if [ -n "$URL" ]; then
         echo -e "${CYAN}🌐 Публичная ссылка:${NC}"
         echo -e "${GREEN}   ${URL}${NC}"
         echo ""
-        echo -e "${YELLOW}   Откройте в браузере для доступа к
+        echo -e "${YELLOW}   Откройте в браузере для доступа к рабочему столу${NC}"
+    else
+        echo -e "${YELLOW}⚠️  URL не определён автоматически.${NC}"
+        echo -e "${CYAN}   Ищите ссылку вида https://xxx.pinggy.link в выводе выше${NC}"
+    fi
+    echo ""
+    echo -e "${BLUE}--- Локально ---${NC}"
+    echo -e "   VNC:   localhost:${VNC_PORT}"
+    echo -e "   noVNC: http://localhost:${NOVNC_PORT}"
+    echo ""
+    echo -e "${RED}--- Для остановки выберите [2] в меню ---${NC}"
+    
+    rm -f "$TEMP_LOG"
+    
+    echo ""
+    read -r -p "Нажмите Enter для возврата в меню (процессы останутся активными)..."
+}
+
+remove_vnc() {
+    echo -e "${RED}--- Остановка и удаление VNC ---${NC}"
+    
+    echo -e "${YELLOW}[*] Остановка SSH туннеля...${NC}"
+    pkill -f "ssh.*qr@free.pinggy.io" 2>/dev/null
+    
+    echo -e "${YELLOW}[*] Остановка websockify...${NC}"
+    pkill -f "websockify" 2>/dev/null
+    
+    echo -e "${YELLOW}[*] Остановка VNC сервера...${NC}"
+    vncserver -kill :1 2>/dev/null
+    vncserver -kill :2 2>/dev/null
+    
+    rm -rf "$HOME/.novnc-tmp" 2>/dev/null
+    
+    echo ""
+    echo -e "${GREEN}[+] Все сервисы остановлены и удалены.${NC}"
+    read -r -p "Нажмите Enter..."
+}
+
+while true; do
+    show_menu
+    echo -n "Выберите действие: "
+    read -r choice
+    echo ""
+    
+    case "$choice" in
+        1)
+            install_vnc
+            ;;
+        2)
+            remove_vnc
+            ;;
+        3)
+            echo -e "${CYAN}Выход.${NC}"
+            exit 0
+            ;;
+        "")
+            echo -e "${RED}Пустой ввод! Введите 1, 2 или 3.${NC}"
+            sleep 1
+            ;;
+        *)
+            echo -e "${RED}Неверный выбор: '$choice'${NC}"
+            sleep 1
+            ;;
+    esac
+done
